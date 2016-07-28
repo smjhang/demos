@@ -1,0 +1,17 @@
+HMSET product:1 name "多力多滋組合包-綜合 54g*4包/組" price 55 stock 256
+HMSET product:2 name "【洋芋片】Lays樂事瑞士香濃起司 97g/包" price 32 stock 179
+HMSET product:3 name "【蔓莓纖果】萬歲牌蔓莓纖果150G"  price 59 stock 326
+HMSET product:4 name "【蒜香青豆】盛香珍蒜香青豆 240g/包" price 42 stock 324
+HMSET product:5 name "【義美】義美小泡芙（檸檬風味）171g/盒" price 64 stock 64
+HMSET product:6 name "【洋芋片】波的多超厚切洋芋片-蚵仔煎味" price 53 stock 182
+HMSET product:7 name "【義美】義美小蛋卷（原味）" price 49 stock 313
+hmset product:8 name "品客碳烤BBQ口味洋芋片" price 55 stock 158
+
+SADD products 1
+SADD products 2
+SADD products 3
+SADD products 4
+SADD products 5
+SADD products 6
+SADD products 7
+SADD products 8
