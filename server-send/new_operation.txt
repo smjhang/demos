@@ -1,2 +1,0 @@
-HMSET product:9 name '旺旺 仙貝經濟包' price 469 stock 79
-HMSET product:9 name '旺旺 仙貝經濟包' price 469 stock 75
