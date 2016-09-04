@@ -4,7 +4,6 @@ require __DIR__.'/vendor/autoload.php';
 class LocalStorage
 {
     private $product_store = []; // 目前所有 products
-
     /**
      * 使用前更新目前所有 products
      * @param \Predis\Client $client_sync
@@ -111,7 +110,6 @@ $client_sync = new Predis\Client('tcp://127.0.0.1:6379');
 $local_storage = new LocalStorage();
 $local_storage->init($client_sync);
 $local_storage->showStore();
-
 
 /**
  * 註冊處理 keyspace 異動的事件，並根據事件的訊息做相應的處理
