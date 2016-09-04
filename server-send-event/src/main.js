@@ -1,6 +1,7 @@
 /**
  * Created by simon on 9/4/16.
  */
+import 'babel-polyfill';
 import ServerSendEventHandler from "ServerSendEventHandler";
 import ProductList from "ProductList";
 import ServerSendEventHandlerException from "ServerSendEventHandlerException";
