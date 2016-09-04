@@ -5,6 +5,7 @@
  * Date: 9/5/16
  * Time: 1:47 AM
  */
+require __DIR__.'/vendor/autoload.php';
 $client_sync = new Predis\Client('tcp://127.0.0.1:6379');
 $all_product_keys = $client_sync->keys('product:*');
 $product_store = [];
@@ -17,6 +18,6 @@ foreach ($all_product_keys as $product_key) {
 }
 $output = [];
 foreach ($product_store as $id => $product) {
-    $output[] = ["id" => $id, "name" => $product['name'], "price" => $product['price'], "stock" => product['stock']];
+    $output[] = ["id" => $id, "name" => $product['name'], "price" => $product['price'], "stock" => $product['stock']];
 }
 echo json_encode($output);

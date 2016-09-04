@@ -2,7 +2,7 @@
  * Created by simon on 9/4/16.
  */
 
-import ServerSendEventHandlerException from "ServerSendEventHandlerException";
+import ServerSendEventHandlerException from './ServerSendEventHandlerException.js';
 
 const ADD = 0; // 產品新增事件代碼
 const UPDATE = 1; // 產品修改事件代碼

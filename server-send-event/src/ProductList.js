@@ -1,7 +1,7 @@
 /**
  * Created by simon on 9/4/16.
  */
-import ProductListException from "ProductListException";
+import ProductListException from './ProductListException.js';
 /**
  * 維護本地產品列表的物件
  */
