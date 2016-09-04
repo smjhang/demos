@@ -52,26 +52,26 @@ export default class ServerSendEventHandler {
         if ([this.update_events.length, this.delete_events.length, this.add_events.length].includes(0)) {
             throw new ServerSendEventHandlerException(`Error #2: Event handlers must be specified before listing event.`);
         }
-        let evtSource = new EventSource("url");
-        evtSource.addEventListener('add', function (e) {
+        let event_source = new EventSource("url");
+        event_source.addEventListener('add', function (e) {
             let response_data = JSON.parse(e.data);
             Array.prototype.forEach.call(this.add_events, function (event_handler) {
                 event_handler(response_data);
             });
         }, false);
-        evtSource.addEventListener('update', function (e) {
+        event_source.addEventListener('update', function (e) {
             let response_data = JSON.parse(e.data);
             Array.prototype.forEach.call(this.update_events, function (event_handler) {
                 event_handler(response_data);
             });
         }, false);
-        evtSource.addEventListener('delete', function (e) {
+        event_source.addEventListener('delete', function (e) {
             let response_data = JSON.parse(e.data);
             Array.prototype.forEach.call(this.delete_events, function (event_handler) {
                 event_handler(response_data);
             });
         }, false);
-        evtSource.onerror = function(e) {
+        event_source.onerror = function(e) {
             throw new ServerSendEventHandlerException(`Error #4: Server send event failed: ${e.message}.`);
         };
     }
@@ -82,14 +82,14 @@ export default class ServerSendEventHandler {
      * @param event_handler
      */
     addEventHandler (event_type, event_handler) {
-        switch (event_type){
-            case Notifier.ADD:
+        switch (event_type) {
+            case ServerSendEventHandler.ADD:
                 this.add_events.push(event_handler);
                 break;
-            case Notifier.UPDATE:
+            case ServerSendEventHandler.UPDATE:
                 this.update_events.push(event_handler);
                 break;
-            case Notifier.DELETE:
+            case ServerSendEventHandler.DELETE:
                 this.delete_events.push(event_handler);
                 break;
             default:
@@ -105,21 +105,21 @@ export default class ServerSendEventHandler {
      */
     removeEventHandler (event_type, event_handler) {
         switch (event_type) {
-            case Notifier.ADD:
+            case ServerSendEventHandler.ADD:
                 let index = this.add_events.findIndex(item => Object.is(item, event_handler));
                 if (index === -1) {
                     throw new ServerSendEventHandlerException(`Error #3: No such event handler.`);
                 }
                 this.add_events.splice(index, 1);
                 break;
-            case Notifier.UPDATE:
+            case ServerSendEventHandler.UPDATE:
                 this.update_events.findIndex(item => Object.is(item, event_handler));
                 if (index === -1) {
                     throw new ServerSendEventHandlerException(`Error #3: No such event handler.`);
                 }
                 this.update_events.splice(index, 1);
                 break;
-            case Notifier.DELETE:
+            case ServerSendEventHandler.DELETE:
                 this.delete_events.findIndex(item => Object.is(item, event_handler));
                 if (index === -1) {
                     throw new ServerSendEventHandlerException(`Error #3: No such event handler.`);
