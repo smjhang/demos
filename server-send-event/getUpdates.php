@@ -50,9 +50,13 @@ class LocalStorage
      */
     function insertHandler($id, $product)
     {
-        echo "event: add\n";
-        echo "data: {\"id\":$id, \"name\": {$product['name']}, \"price\": {$product['price']}, \"stock\": {$product['stock']}\n\n";
+        //echo "event: add" . PHP_EOL;
+        echo 'data: {"id": "'.$id.'", "name": "'.$product['name'].'", "price": "'.$product['price'].'", "stock": "'.$product['stock'].'"}';
+        echo PHP_EOL.PHP_EOL;
         $this->product_store[$id] = $product;
+        ob_flush();
+        flush();
+        sleep(1);
     }
 
 
@@ -63,7 +67,7 @@ class LocalStorage
      */
     function updateHandler($id, $product)
     {
-        echo "event: update\n";
+        //echo "event: update".PHP_EOL;
         echo "data: ";
         $data = [];
         $data['id'] = $id;
@@ -80,7 +84,10 @@ class LocalStorage
             $this->product_store[$id]['stock'] = $product['stock'];
         }
         echo json_encode($data);
-        echo "\n\n";
+        echo PHP_EOL.PHP_EOL;
+        ob_flush();
+        flush();
+        sleep(1);
     }
 
     /**
@@ -91,25 +98,14 @@ class LocalStorage
     function deleteHandler($id, $product)
     {
         $product = $this->product_store[$id];
-        echo "event: delete\n";
-        echo "data: {\"id\":$id, \"name\": {$product['name']}, \"price\": {$product['price']}, \"stock\": {$product['stock']}\n\n";
+        //echo "event: delete".PHP_EOL;
+        echo 'data: {"id": "'.$id.'", "name": "'.$product['name'].'", "price": "'.$product['price'].'", "stock": "'.$product['stock'].'"}';
+        echo PHP_EOL.PHP_EOL;
         unset($this->product_store[$id]);
+        ob_flush();
+        flush();
+        sleep(1);
     }
-
-    /**
-     * 顯示 product_store
-     */
-    function showStore()
-    {
-        foreach ($this->product_store as $id => $product) {
-            echo "id: $id\n";
-            echo "name: {$product['name']}\n";
-            echo "price: {$product['price']}\n";
-            echo "stock: {$product['stock']}\n";
-            echo "----------------------------------------------\n";
-        }
-    }
-
 }
 
 $client = new Predis\Async\Client('tcp://127.0.0.1:6379');
@@ -118,13 +114,35 @@ $client_sync = new Predis\Client('tcp://127.0.0.1:6379');
 $local_storage = new LocalStorage();
 $local_storage->init($client_sync);
 
-header('Content-Type: text/event-stream');
-header('Cache-Control: no-cache');
-ob_end_clean();
+header("Content-Type: text/event-stream");
+header("Cache-Control: no-cache");
+
 
 /**
  * 註冊處理 keyspace 異動的事件，並根據事件的訊息做相應的處理
  */
+/*$counter = rand(1, 10);
+while (1) {
+    // Every second, sent a "ping" event.
+
+    echo "event: ping\n";
+    $curDate = date(DATE_ISO8601);
+    echo 'data: {"time": "' . $curDate . '"}';
+    echo "\n\n";
+
+    // Send a simple message at random intervals.
+
+    $counter--;
+
+    if (!$counter) {
+        echo 'data: This is a message at time ' . $curDate . "\n\n";
+        $counter = rand(1, 10);
+    }
+
+    ob_flush();
+    flush();
+    sleep(1);
+}*/
 $client->connect(function ($client) use ($client_sync, $local_storage) {
     // 使用 psubscribe 訂閱 product:#id 這種樣式的 key 被異動的事件
     $client->pubSubLoop(['psubscribe'=>'__keyspace@*__:product:*'],
@@ -147,6 +165,10 @@ $client->connect(function ($client) use ($client_sync, $local_storage) {
                         $local_storage->insertHandler($product_id,$product);
                     }
                 }
+            }
+
+            if ($event->payload === 'quit') {
+                $pubsub->quit();
             }
         });
 });

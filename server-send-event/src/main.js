@@ -9,7 +9,10 @@ window.onload = function () {
     let sse_handler = new ServerSendEventHandler();
     product_list.loadList('./getProductList.php');
     makeTableFromProductList("product_list", product_list.getProductList());
-    sse_handler.add_events(ServerSendEventHandler.ADD, Function.prototype.call(product_list,));
+    sse_handler.addEventHandler(ServerSendEventHandler.ADD, product_list.addItem.bind(product_list));
+    sse_handler.addEventHandler(ServerSendEventHandler.UPDATE, product_list.updateItem.bind(product_list));
+    sse_handler.addEventHandler(ServerSendEventHandler.DELETE, product_list.deleteItemById.bind(product_list));
+    sse_handler.listen("./getUpdates.php");
 };
 function makeTableFromProductList (tbody_id, product_list) {
     let tbody = document.getElementById(tbody_id);

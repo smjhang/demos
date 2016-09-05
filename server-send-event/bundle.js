@@ -64,22 +64,28 @@
 	    var sse_handler = new _ServerSendEventHandler2.default();
 	    product_list.loadList('./getProductList.php');
 	    makeTableFromProductList("product_list", product_list.getProductList());
+	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.ADD, product_list.addItem.bind(product_list));
+	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.UPDATE, product_list.updateItem.bind(product_list));
+	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.DELETE, product_list.deleteItemById.bind(product_list));
+	    sse_handler.listen("./getUpdates.php");
 	};
 	function makeTableFromProductList(tbody_id, product_list) {
 	    var tbody = document.getElementById(tbody_id);
 	    var docfrag = document.createDocumentFragment();
 	    Array.prototype.forEach.call(product_list, function (product) {
 	        var tr = document.createElement("tr");
+	        var id = product.id;
 	        var name = product.name;
 	        var price = product.price;
 	        var stock = product.stock;
 	
+	        tr.setAttribute('id', id);
 	        var td_name = document.createElement('td');
 	        var td_price = document.createElement('td');
 	        var td_stock = document.createElement('td');
-	        td_name.textContent = product.name;
-	        td_price.textContent = product.price;
-	        td_stock.textContent = product.stock;
+	        td_name.textContent = name;
+	        td_price.textContent = price;
+	        td_stock.textContent = stock;
 	        tr.appendChild(td_name);
 	        tr.appendChild(td_price);
 	        tr.appendChild(td_stock);
@@ -142,31 +148,50 @@
 	         * @param url
 	         */
 	        value: function listen(url) {
+	            var _this = this;
+	
 	            if ([this.update_events.length, this.delete_events.length, this.add_events.length].includes(0)) {
 	                throw new _ServerSendEventHandlerException2.default('Error #2: Event handlers must be specified before listing event.');
 	            }
-	            var evtSource = new EventSource("url");
-	            evtSource.addEventListener('add', function (e) {
+	            var event_source = new EventSource(url);
+	            event_source.addEventListener('add', function (e) {
+	                console.log(e);
 	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(this.add_events, function (event_handler) {
+	                Array.prototype.forEach.call(_this.add_events, function (event_handler) {
 	                    event_handler(response_data);
 	                });
 	            }, false);
-	            evtSource.addEventListener('update', function (e) {
+	            event_source.addEventListener('update', function (e) {
+	                console.log(e);
 	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(this.update_events, function (event_handler) {
+	                Array.prototype.forEach.call(_this.update_events, function (event_handler) {
 	                    event_handler(response_data);
 	                });
 	            }, false);
-	            evtSource.addEventListener('delete', function (e) {
+	            event_source.addEventListener('delete', function (e) {
+	                console.log(e);
 	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(this.delete_events, function (event_handler) {
+	                Array.prototype.forEach.call(_this.delete_events, function (event_handler) {
 	                    event_handler(response_data);
 	                });
 	            }, false);
-	            evtSource.onerror = function (e) {
-	                throw new _ServerSendEventHandlerException2.default('Error #4: Server send event failed: ' + e.message + '.');
+	            event_source.onopen = function (e) {
+	                console.log('Connected');
 	            };
+	            event_source.onerror = function (e) {
+	                console.log(e);
+	                throw new _ServerSendEventHandlerException2.default('Error #4: Server send event failed: ' + e + '.');
+	            };
+	            event_source.onmessage = function (e) {
+	                console.log(e);
+	            };
+	            event_source.addEventListener('ping', function (e) {
+	                console.log(e);
+	                var response_data = JSON.parse(e.data);
+	                Array.prototype.forEach.call(_this.delete_events, function (event_handler) {
+	                    event_handler(response_data);
+	                });
+	            }, false);
 	        }
 	
 	        /**
@@ -179,13 +204,13 @@
 	        key: 'addEventHandler',
 	        value: function addEventHandler(event_type, event_handler) {
 	            switch (event_type) {
-	                case Notifier.ADD:
+	                case ServerSendEventHandler.ADD:
 	                    this.add_events.push(event_handler);
 	                    break;
-	                case Notifier.UPDATE:
+	                case ServerSendEventHandler.UPDATE:
 	                    this.update_events.push(event_handler);
 	                    break;
-	                case Notifier.DELETE:
+	                case ServerSendEventHandler.DELETE:
 	                    this.delete_events.push(event_handler);
 	                    break;
 	                default:
@@ -204,7 +229,7 @@
 	        key: 'removeEventHandler',
 	        value: function removeEventHandler(event_type, event_handler) {
 	            switch (event_type) {
-	                case Notifier.ADD:
+	                case ServerSendEventHandler.ADD:
 	                    var index = this.add_events.findIndex(function (item) {
 	                        return Object.is(item, event_handler);
 	                    });
@@ -213,7 +238,7 @@
 	                    }
 	                    this.add_events.splice(index, 1);
 	                    break;
-	                case Notifier.UPDATE:
+	                case ServerSendEventHandler.UPDATE:
 	                    this.update_events.findIndex(function (item) {
 	                        return Object.is(item, event_handler);
 	                    });
@@ -222,7 +247,7 @@
 	                    }
 	                    this.update_events.splice(index, 1);
 	                    break;
-	                case Notifier.DELETE:
+	                case ServerSendEventHandler.DELETE:
 	                    this.delete_events.findIndex(function (item) {
 	                        return Object.is(item, event_handler);
 	                    });

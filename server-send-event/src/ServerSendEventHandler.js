@@ -52,28 +52,45 @@ export default class ServerSendEventHandler {
         if ([this.update_events.length, this.delete_events.length, this.add_events.length].includes(0)) {
             throw new ServerSendEventHandlerException(`Error #2: Event handlers must be specified before listing event.`);
         }
-        let event_source = new EventSource("url");
-        event_source.addEventListener('add', function (e) {
+        let event_source = new EventSource(url);
+        event_source.addEventListener('add',  (e) => {
+            console.log(e);
             let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.add_events, function (event_handler) {
+            Array.prototype.forEach.call(this.add_events,  (event_handler) => {
                 event_handler(response_data);
             });
         }, false);
-        event_source.addEventListener('update', function (e) {
+        event_source.addEventListener('update',  (e) => {
+            console.log(e);
             let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.update_events, function (event_handler) {
+            Array.prototype.forEach.call(this.update_events, (event_handler) => {
                 event_handler(response_data);
             });
         }, false);
-        event_source.addEventListener('delete', function (e) {
+        event_source.addEventListener('delete', (e) => {
+            console.log(e);
             let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.delete_events, function (event_handler) {
+            Array.prototype.forEach.call(this.delete_events, (event_handler) => {
                 event_handler(response_data);
             });
         }, false);
-        event_source.onerror = function(e) {
-            throw new ServerSendEventHandlerException(`Error #4: Server send event failed: ${e.message}.`);
+        event_source.onopen =  (e) => {
+            console.log('Connected');
         };
+        event_source.onerror = (e) => {
+            console.log(e);
+            throw new ServerSendEventHandlerException(`Error #4: Server send event failed: ${e}.`);
+        };
+        event_source.onmessage = (e) => {
+            console.log(e);
+        };
+        event_source.addEventListener('ping', (e) => {
+            console.log(e);
+            let response_data = JSON.parse(e.data);
+            Array.prototype.forEach.call(this.delete_events, (event_handler) => {
+                event_handler(response_data);
+            });
+        }, false);
     }
 
     /**
