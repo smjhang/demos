@@ -53,6 +53,8 @@ class LocalStorage
         echo "event: add" . PHP_EOL;
         echo 'data: {"id": "'.$id.'", "name": "'.$product['name'].'", "price": "'.$product['price'].'", "stock": "'.$product['stock'].'"}';
         echo PHP_EOL.PHP_EOL;
+        ob_flush();
+        flush();
         $this->product_store[$id] = $product;
     }
 
@@ -82,6 +84,8 @@ class LocalStorage
         }
         echo json_encode($data);
         echo PHP_EOL.PHP_EOL;
+        ob_flush();
+        flush();
     }
 
     /**
@@ -92,64 +96,68 @@ class LocalStorage
     function deleteHandler($id, $product)
     {
         $product = $this->product_store[$id];
-        //echo "event: delete".PHP_EOL;
+        echo "event: delete".PHP_EOL;
         echo 'data: {"id": "'.$id.'", "name": "'.$product['name'].'", "price": "'.$product['price'].'", "stock": "'.$product['stock'].'"}';
         echo PHP_EOL.PHP_EOL;
+        ob_flush();
+        flush();
         unset($this->product_store[$id]);
     }
 }
-
 $client = new Predis\Async\Client('tcp://127.0.0.1:6379');
 $client_sync = new Predis\Client('tcp://127.0.0.1:6379');
 
 $local_storage = new LocalStorage();
 $local_storage->init($client_sync);
-$pid = pcntl_fork(); //在這裡開始產生程式的分岔
-if ($pid == -1) {
-    die('無法產生子程序');
-} else if ($pid) {
-    header("Content-Type: text/event-stream");
-    header("Cache-Control: no-cache");
-    ob_end_flush();
-} else {
-    /**
-     * 註冊處理 keyspace 異動的事件，並根據事件的訊息做相應的處理
-     */
-    $client->connect(function ($client) use ($client_sync, $local_storage) {
-        // 使用 psubscribe 訂閱 product:#id 這種樣式的 key 被異動的事件
-        $client->pubSubLoop(['psubscribe'=>'__keyspace@*__:product:*'],
-            function ($event, $pubsub) use ($client_sync, $local_storage) {
-                echo('data:Hi\n\n');
-                //$pubsub->quit();
-                /*
-                // 當 product:#id 被異動的時候，根據事件發生的 channel 的名稱取得 key 的名稱和 product 的 id
-                if (preg_match('/__keyspace@\d+__:(product:(\d+))/', $event->channel, $matches)) {
-                    $product_key = $matches[1];
-                    $product_id = $matches[2];
-                    // 取得被異動後，最新的 product 資料
-                    $product = $client_sync->hgetall($product_key);
-                    // 根據事件傳來的訊息得知操作 key 的類型
-                    $op = $event->payload;
-                    if ($op === 'del') {
-                        $local_storage->deleteHandler($product_id, $product);
-                    } else if ($op === 'hset') {
-                        // 當操作類型是 hset 的時候，需要從目前的 product store 去判斷是新增還是修改
-                        if ($local_storage->contains($product_id)) {
-                            $local_storage->updateHandler($product_id, $product);
-                        } else {
-                            $local_storage->insertHandler($product_id,$product);
-                        }
-                    }
-                    if ($op === 'quit') {
-                        $pubsub->quit();
 
+header("Content-Type: text/event-stream");
+header("Cache-Control: no-cache");
+
+/**
+ * 註冊處理 keyspace 異動的事件，並根據事件的訊息做相應的處理
+ */
+$client->connect(function ($client) use ($client_sync, $local_storage) {
+
+    // 使用 psubscribe 訂閱 product:#id 這種樣式的 key 被異動的事件
+    $client->pubSubLoop(['psubscribe'=>'__keyspace@*__:product:*'],
+        function ($event, $pubsub) use ($client_sync, $local_storage) {
+            // 當 product:#id 被異動的時候，根據事件發生的 channel 的名稱取得 key 的名稱和 product 的 id
+            if (preg_match('/__keyspace@\d+__:(product:(\d+))/', $event->channel, $matches)) {
+                $product_key = $matches[1];
+                $product_id = $matches[2];
+                // 取得被異動後，最新的 product 資料
+                $product = $client_sync->hgetall($product_key);
+                // 根據事件傳來的訊息得知操作 key 的類型
+                $op = $event->payload;
+                if ($op === 'del') {
+                    $local_storage->deleteHandler($product_id, $product);
+                } else if ($op === 'hset') {
+                    // 當操作類型是 hset 的時候，需要從目前的 product store 去判斷是新增還是修改
+                    if ($local_storage->contains($product_id)) {
+                        $local_storage->updateHandler($product_id, $product);
+                    } else {
+                        $local_storage->insertHandler($product_id,$product);
                     }
-                    $pubsub->end();
                 }
-    */
-            });
-    });
+                if ($op === 'quit') {
+                    $pubsub->quit();
+                }
+            }
+        });
+});
 // 開始監聽 keyspace 異動事件
-    $client->getEventLoop()->run();
-}
+$client->getEventLoop()->run();
 
+
+/*$descriptorspec = array(
+    1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+);
+if (ob_get_level())
+    ob_end_clean();
+$cwd = '/home/simon/demos/server-send-event/';
+$env = array();
+$process = proc_open('php notifier.php', $descriptorspec, $pipes, $cwd, $env);
+$fout = fopen("php://output","w");
+if( $fout ) {
+    stream_copy_to_stream($pipes[1], $fout);
+}*/
