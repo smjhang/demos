@@ -54,43 +54,20 @@ export default class ServerSendEventHandler {
         }
         let event_source = new EventSource(url);
         event_source.addEventListener('add',  (e) => {
-            console.log(e);
             let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.add_events,  (event_handler) => {
-                event_handler(response_data);
-            });
+            this.add_events.forEach( event_handler => event_handler(response_data));
         }, false);
         event_source.addEventListener('update',  (e) => {
-            console.log(e);
             let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.update_events, (event_handler) => {
-                event_handler(response_data);
-            });
+            this.update_events.forEach(event_handler => event_handler(response_data));
         }, false);
         event_source.addEventListener('delete', (e) => {
-            console.log(e);
             let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.delete_events, (event_handler) => {
-                event_handler(response_data);
-            });
+            this.delete_events.forEach(event_handler => event_handler(response_data));
         }, false);
-        event_source.onopen =  (e) => {
-            console.log('Connected');
-        };
         event_source.onerror = (e) => {
-            console.log(e);
             throw new ServerSendEventHandlerException(`Error #4: Server send event failed: ${e}.`);
         };
-        event_source.onmessage = (e) => {
-            console.log(e);
-        };
-        event_source.addEventListener('ping', (e) => {
-            console.log(e);
-            let response_data = JSON.parse(e.data);
-            Array.prototype.forEach.call(this.delete_events, (event_handler) => {
-                event_handler(response_data);
-            });
-        }, false);
     }
 
     /**
@@ -121,23 +98,24 @@ export default class ServerSendEventHandler {
      * @param event_handler
      */
     removeEventHandler (event_type, event_handler) {
+        let index;
         switch (event_type) {
             case ServerSendEventHandler.ADD:
-                let index = this.add_events.findIndex(item => Object.is(item, event_handler));
+                index = this.add_events.findIndex(item => Object.is(item, event_handler));
                 if (index === -1) {
                     throw new ServerSendEventHandlerException(`Error #3: No such event handler.`);
                 }
                 this.add_events.splice(index, 1);
                 break;
             case ServerSendEventHandler.UPDATE:
-                this.update_events.findIndex(item => Object.is(item, event_handler));
+                index = this.update_events.findIndex(item => Object.is(item, event_handler));
                 if (index === -1) {
                     throw new ServerSendEventHandlerException(`Error #3: No such event handler.`);
                 }
                 this.update_events.splice(index, 1);
                 break;
             case ServerSendEventHandler.DELETE:
-                this.delete_events.findIndex(item => Object.is(item, event_handler));
+                index = this.delete_events.findIndex(item => Object.is(item, event_handler));
                 if (index === -1) {
                     throw new ServerSendEventHandlerException(`Error #3: No such event handler.`);
                 }

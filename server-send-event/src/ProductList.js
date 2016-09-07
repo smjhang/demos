@@ -38,6 +38,7 @@ export default class ProductList {
 
     /**
      * 增加產品
+     * @param item
      */
     addItem (item) {
          this.product_list.push(item);
@@ -45,12 +46,12 @@ export default class ProductList {
 
     /**
      * 刪除產品
-     * @param id
+     * @param deleting_item
      */
-    deleteItemById (id) {
-        let index = this.product_list.findIndex(item => id === item.id);
+    deleteItemById (deleting_item) {
+        let index = this.product_list.findIndex(item => deleting_item.id === item.id);
         if (index === -1) {
-            throw new ProductListException(`Error #2: Delete product error, not such product id: ${id}.`);
+            throw new ProductListException(`Error #2: Delete product error, not such product id: ${deleting_item.id}.`);
         }
         this.product_list.splice(index,1);
     }
@@ -62,7 +63,7 @@ export default class ProductList {
     updateItem (updating_item) {
         let index = this.product_list.findIndex(item => item.id === updating_item.id);
         if (index === -1) {
-            throw new ProductListException(`Error #3: Update product error, not such product id: ${id}.`);
+            throw new ProductListException(`Error #3: Update product error, not such product id: ${updating_item.id}.`);
         }
         // 更新產品部分資訊
         for (let prop in updating_item) {

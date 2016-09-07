@@ -63,35 +63,87 @@
 	    var product_list = new _ProductList2.default();
 	    var sse_handler = new _ServerSendEventHandler2.default();
 	    product_list.loadList('./getProductList.php');
-	    makeTableFromProductList("product_list", product_list.getProductList());
+	    var tbody = document.getElementById("product_list");
+	    makeTableFromProductList(tbody, product_list.getProductList());
 	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.ADD, product_list.addItem.bind(product_list));
+	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.ADD, insertRow.bind(undefined, tbody));
 	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.UPDATE, product_list.updateItem.bind(product_list));
+	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.UPDATE, updateRow);
 	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.DELETE, product_list.deleteItemById.bind(product_list));
+	    sse_handler.addEventHandler(_ServerSendEventHandler2.default.DELETE, deleteRow.bind(undefined, tbody));
 	    sse_handler.listen("./getUpdates.php");
 	};
-	function makeTableFromProductList(tbody_id, product_list) {
-	    var tbody = document.getElementById(tbody_id);
+	/**
+	 * 顯示產品清單
+	 * @param tbody
+	 * @param product_list
+	 */
+	function makeTableFromProductList(tbody, product_list) {
 	    var docfrag = document.createDocumentFragment();
-	    Array.prototype.forEach.call(product_list, function (product) {
-	        var tr = document.createElement("tr");
-	        var id = product.id;
-	        var name = product.name;
-	        var price = product.price;
-	        var stock = product.stock;
-	
-	        tr.setAttribute('id', id);
-	        var td_name = document.createElement('td');
-	        var td_price = document.createElement('td');
-	        var td_stock = document.createElement('td');
-	        td_name.textContent = name;
-	        td_price.textContent = price;
-	        td_stock.textContent = stock;
-	        tr.appendChild(td_name);
-	        tr.appendChild(td_price);
-	        tr.appendChild(td_stock);
-	        docfrag.appendChild(tr);
+	    product_list.forEach(function (product) {
+	        return insertRow(docfrag, product);
 	    });
 	    tbody.appendChild(docfrag);
+	}
+	/**
+	 * 插入產品
+	 * @param tbody
+	 * @param product
+	 */
+	function insertRow(tbody, product) {
+	    var tr = document.createElement("tr");
+	    var id = product.id;
+	    var name = product.name;
+	    var price = product.price;
+	    var stock = product.stock;
+	
+	    tr.setAttribute('id', id);
+	    var td_name = document.createElement('td');
+	    var td_price = document.createElement('td');
+	    var td_stock = document.createElement('td');
+	    td_name.textContent = name;
+	    td_name.setAttribute('name', 'name');
+	    td_price.textContent = price;
+	    td_price.setAttribute('name', 'price');
+	    td_stock.textContent = stock;
+	    td_stock.setAttribute('name', 'stock');
+	    tr.appendChild(td_name);
+	    tr.appendChild(td_price);
+	    tr.appendChild(td_stock);
+	    tbody.appendChild(tr);
+	}
+	
+	/**
+	 * 更新產品
+	 * @param product
+	 */
+	function updateRow(product) {
+	    var id = product.id;
+	    var tr = document.getElementById(id);
+	    if (tr === null) {
+	        return;
+	    }
+	    for (var key in product) {
+	        if (Object.prototype.hasOwnProperty.call(product, key)) {
+	            var updating_td = tr.querySelector('td[name="' + key + '"]');
+	            if (updating_td !== null) {
+	                updating_td.textContent = product[key];
+	            }
+	        }
+	    }
+	}
+	
+	/**
+	 * 刪除產品
+	 * @param tbody
+	 * @param product
+	 */
+	function deleteRow(tbody, product) {
+	    var id = product.id;
+	    var tr = document.getElementById(id);
+	    if (tr !== null) {
+	        tbody.removeChild(tr);
+	    }
 	}
 
 /***/ },
@@ -155,43 +207,26 @@
 	            }
 	            var event_source = new EventSource(url);
 	            event_source.addEventListener('add', function (e) {
-	                console.log(e);
 	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(_this.add_events, function (event_handler) {
-	                    event_handler(response_data);
+	                _this.add_events.forEach(function (event_handler) {
+	                    return event_handler(response_data);
 	                });
 	            }, false);
 	            event_source.addEventListener('update', function (e) {
-	                console.log(e);
 	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(_this.update_events, function (event_handler) {
-	                    event_handler(response_data);
+	                _this.update_events.forEach(function (event_handler) {
+	                    return event_handler(response_data);
 	                });
 	            }, false);
 	            event_source.addEventListener('delete', function (e) {
-	                console.log(e);
 	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(_this.delete_events, function (event_handler) {
-	                    event_handler(response_data);
+	                _this.delete_events.forEach(function (event_handler) {
+	                    return event_handler(response_data);
 	                });
 	            }, false);
-	            event_source.onopen = function (e) {
-	                console.log('Connected');
-	            };
 	            event_source.onerror = function (e) {
-	                console.log(e);
 	                throw new _ServerSendEventHandlerException2.default('Error #4: Server send event failed: ' + e + '.');
 	            };
-	            event_source.onmessage = function (e) {
-	                console.log(e);
-	            };
-	            event_source.addEventListener('ping', function (e) {
-	                console.log(e);
-	                var response_data = JSON.parse(e.data);
-	                Array.prototype.forEach.call(_this.delete_events, function (event_handler) {
-	                    event_handler(response_data);
-	                });
-	            }, false);
 	        }
 	
 	        /**
@@ -228,9 +263,10 @@
 	    }, {
 	        key: 'removeEventHandler',
 	        value: function removeEventHandler(event_type, event_handler) {
+	            var index = void 0;
 	            switch (event_type) {
 	                case ServerSendEventHandler.ADD:
-	                    var index = this.add_events.findIndex(function (item) {
+	                    index = this.add_events.findIndex(function (item) {
 	                        return Object.is(item, event_handler);
 	                    });
 	                    if (index === -1) {
@@ -239,7 +275,7 @@
 	                    this.add_events.splice(index, 1);
 	                    break;
 	                case ServerSendEventHandler.UPDATE:
-	                    this.update_events.findIndex(function (item) {
+	                    index = this.update_events.findIndex(function (item) {
 	                        return Object.is(item, event_handler);
 	                    });
 	                    if (index === -1) {
@@ -248,7 +284,7 @@
 	                    this.update_events.splice(index, 1);
 	                    break;
 	                case ServerSendEventHandler.DELETE:
-	                    this.delete_events.findIndex(function (item) {
+	                    index = this.delete_events.findIndex(function (item) {
 	                        return Object.is(item, event_handler);
 	                    });
 	                    if (index === -1) {
@@ -406,6 +442,7 @@
 	
 	        /**
 	         * 增加產品
+	         * @param item
 	         */
 	
 	    }, {
@@ -416,17 +453,17 @@
 	
 	        /**
 	         * 刪除產品
-	         * @param id
+	         * @param deleting_item
 	         */
 	
 	    }, {
 	        key: "deleteItemById",
-	        value: function deleteItemById(id) {
+	        value: function deleteItemById(deleting_item) {
 	            var index = this.product_list.findIndex(function (item) {
-	                return id === item.id;
+	                return deleting_item.id === item.id;
 	            });
 	            if (index === -1) {
-	                throw new _ProductListException2.default("Error #2: Delete product error, not such product id: " + id + ".");
+	                throw new _ProductListException2.default("Error #2: Delete product error, not such product id: " + deleting_item.id + ".");
 	            }
 	            this.product_list.splice(index, 1);
 	        }
@@ -443,7 +480,7 @@
 	                return item.id === updating_item.id;
 	            });
 	            if (index === -1) {
-	                throw new _ProductListException2.default("Error #3: Update product error, not such product id: " + id + ".");
+	                throw new _ProductListException2.default("Error #3: Update product error, not such product id: " + updating_item.id + ".");
 	            }
 	            // 更新產品部分資訊
 	            for (var prop in updating_item) {

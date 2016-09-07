@@ -41,8 +41,7 @@ class LocalStorage
         }
         return false;
     }
-
-
+    
     /**
      * 處理新增事件
      * @param $id
@@ -57,8 +56,7 @@ class LocalStorage
         flush();
         $this->product_store[$id] = $product;
     }
-
-
+    
     /**
      * 處理更改事件
      * @param $id
@@ -66,8 +64,6 @@ class LocalStorage
      */
     function updateHandler($id, $product)
     {
-        echo "event: update".PHP_EOL;
-        echo "data: ";
         $data = [];
         $data['id'] = $id;
         if ($this->product_store[$id]['name'] !== $product['name']) {
@@ -82,6 +78,8 @@ class LocalStorage
             $data['stock'] = $product['stock'];
             $this->product_store[$id]['stock'] = $product['stock'];
         }
+        echo "event: update".PHP_EOL;
+        echo "data: ";
         echo json_encode($data);
         echo PHP_EOL.PHP_EOL;
         ob_flush();
@@ -96,8 +94,14 @@ class LocalStorage
     function deleteHandler($id, $product)
     {
         $product = $this->product_store[$id];
+        $data = [];
+        $data['id'] = $id;
+        $data['name'] = $product['name'];
+        $data['price'] = $product['price'];
+        $data['stock'] = $product['stock'];
         echo "event: delete".PHP_EOL;
-        echo 'data: {"id": "'.$id.'", "name": "'.$product['name'].'", "price": "'.$product['price'].'", "stock": "'.$product['stock'].'"}';
+        echo "data: ";
+        echo json_encode($data);
         echo PHP_EOL.PHP_EOL;
         ob_flush();
         flush();
@@ -110,8 +114,10 @@ $client_sync = new Predis\Client('tcp://127.0.0.1:6379');
 $local_storage = new LocalStorage();
 $local_storage->init($client_sync);
 
-header("Content-Type: text/event-stream");
-header("Cache-Control: no-cache");
+header("Content-Type: text/event-stream"); // 設定 Server Send Event 的 Content-Type
+header("Cache-Control: no-cache"); // 避免瀏覽器快取 Server Send Event 的內容
+header("X-Accel-Buffering: no"); // 停用 Nginx 輸出緩衝控制
+
 
 /**
  * 註冊處理 keyspace 異動的事件，並根據事件的訊息做相應的處理
@@ -147,17 +153,3 @@ $client->connect(function ($client) use ($client_sync, $local_storage) {
 });
 // 開始監聽 keyspace 異動事件
 $client->getEventLoop()->run();
-
-
-/*$descriptorspec = array(
-    1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
-);
-if (ob_get_level())
-    ob_end_clean();
-$cwd = '/home/simon/demos/server-send-event/';
-$env = array();
-$process = proc_open('php notifier.php', $descriptorspec, $pipes, $cwd, $env);
-$fout = fopen("php://output","w");
-if( $fout ) {
-    stream_copy_to_stream($pipes[1], $fout);
-}*/
