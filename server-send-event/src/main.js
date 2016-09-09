@@ -7,17 +7,22 @@ import ProductList from './ProductList.js';
 window.onload = function () {
     let product_list = new ProductList();
     let sse_handler = new ServerSendEventHandler();
+    // 新連線的頁面先更新最新產品清單
     product_list.loadList('./getProductList.php');
+    // 將產品清單的資訊顯示在頁面上
     let tbody = document.getElementById("product_list");
     makeTableFromProductList(tbody, product_list.getProductList());
+    // 設定當產品異動時要進行的各種處理，這邊主要是更新產品清單資料 product_list 和修改頁面上顯示的資訊
     sse_handler.addEventHandler(ServerSendEventHandler.ADD, product_list.addItem.bind(product_list));
     sse_handler.addEventHandler(ServerSendEventHandler.ADD, insertRow.bind(undefined, tbody));
     sse_handler.addEventHandler(ServerSendEventHandler.UPDATE, product_list.updateItem.bind(product_list));
     sse_handler.addEventHandler(ServerSendEventHandler.UPDATE, updateRow);
     sse_handler.addEventHandler(ServerSendEventHandler.DELETE, product_list.deleteItemById.bind(product_list));
     sse_handler.addEventHandler(ServerSendEventHandler.DELETE, deleteRow.bind(undefined, tbody));
+    // 開始監聽產品異動事件並進行相應處理
     sse_handler.listen("./getUpdates.php");
 };
+
 /**
  * 顯示產品清單
  * @param tbody
@@ -28,6 +33,7 @@ function makeTableFromProductList (tbody, product_list) {
     product_list.forEach(product => insertRow(docfrag, product));
     tbody.appendChild(docfrag);
 }
+
 /**
  * 插入產品
  * @param tbody

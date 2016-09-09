@@ -1,9 +1,6 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: simon
- * Date: 9/5/16
- * Time: 6:56 AM
+ * Author: simon
  */
 require __DIR__.'/vendor/autoload.php';
 

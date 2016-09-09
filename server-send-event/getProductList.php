@@ -1,9 +1,6 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: simon
- * Date: 9/5/16
- * Time: 1:47 AM
+ * Author: simon
  */
 require __DIR__.'/vendor/autoload.php';
 $client_sync = new Predis\Client('tcp://127.0.0.1:6379');
